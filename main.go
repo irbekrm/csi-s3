@@ -8,9 +8,12 @@ import (
 	"os"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/irbekrm/csi-s3/internal/mount"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -75,5 +78,9 @@ func (s identityServer) GetPluginCapabilities(context.Context, *csi.GetPluginCap
 }
 
 func (s identityServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	return &csi.ProbeResponse{}, nil
+	r, err := s.mounter.IsReady()
+	if err != nil {
+		err = status.Error(codes.FailedPrecondition, err.Error())
+	}
+	return &csi.ProbeResponse{Ready: &wrappers.BoolValue{Value: r}}, err
 }
