@@ -74,7 +74,10 @@ func (s identityServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest
 }
 
 func (s identityServer) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
-	return &csi.GetPluginCapabilitiesResponse{}, nil
+	// CONTROLLER_SERVICE plugin capability
+	cSvc := csi.PluginCapability{Type: &csi.PluginCapability_Service_{Service: &csi.PluginCapability_Service{Type: csi.PluginCapability_Service_CONTROLLER_SERVICE}}}
+	caps := []*csi.PluginCapability{&cSvc}
+	return &csi.GetPluginCapabilitiesResponse{Capabilities: caps}, nil
 }
 
 func (s identityServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
