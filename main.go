@@ -50,6 +50,8 @@ func main() {
 	s := grpc.NewServer()
 	i := identityServer{driverVersion: driverVersion, mounter: m}
 	csi.RegisterIdentityServer(s, &i)
+	c := controllerServer{}
+	csi.RegisterControllerServer(s, c)
 	reflection.Register(s)
 
 	if err := s.Serve(l); err != nil {
@@ -86,4 +88,15 @@ func (s identityServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeRes
 		err = status.Error(codes.FailedPrecondition, err.Error())
 	}
 	return &csi.ProbeResponse{Ready: &wrappers.BoolValue{Value: r}}, err
+}
+
+type controllerServer struct {
+	*csi.UnimplementedControllerServer
+}
+
+// ControllerGetCapabilities advertizes which capabilities this controller supports
+func (s controllerServer) ControllerGetCapabilities(context.Context, *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
+	cd := csi.ControllerServiceCapability{Type: &csi.ControllerServiceCapability_Rpc{Rpc: &csi.ControllerServiceCapability_RPC{Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME}}}
+	caps := []*csi.ControllerServiceCapability{&cd}
+	return &csi.ControllerGetCapabilitiesResponse{Capabilities: caps}, nil
 }
