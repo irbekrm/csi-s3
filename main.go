@@ -66,7 +66,7 @@ type identityServer struct {
 }
 
 // GetPluginInfo returns information about this CSI plugin
-func (s identityServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+func (s identityServer) GetPluginInfo(ctx context.Context, r *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	m := map[string]string{"url": driverRepo}
 	return &csi.GetPluginInfoResponse{
 		Name:          driverName,
@@ -75,19 +75,19 @@ func (s identityServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest
 	}, nil
 }
 
-func (s identityServer) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+func (s identityServer) GetPluginCapabilities(ctx context.Context, r *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	// CONTROLLER_SERVICE plugin capability
 	cSvc := csi.PluginCapability{Type: &csi.PluginCapability_Service_{Service: &csi.PluginCapability_Service{Type: csi.PluginCapability_Service_CONTROLLER_SERVICE}}}
 	caps := []*csi.PluginCapability{&cSvc}
 	return &csi.GetPluginCapabilitiesResponse{Capabilities: caps}, nil
 }
 
-func (s identityServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	r, err := s.mounter.IsReady()
+func (s identityServer) Probe(ctx context.Context, r *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	ready, err := s.mounter.IsReady()
 	if err != nil {
 		err = status.Error(codes.FailedPrecondition, err.Error())
 	}
-	return &csi.ProbeResponse{Ready: &wrappers.BoolValue{Value: r}}, err
+	return &csi.ProbeResponse{Ready: &wrappers.BoolValue{Value: ready}}, err
 }
 
 type controllerServer struct {
@@ -95,8 +95,24 @@ type controllerServer struct {
 }
 
 // ControllerGetCapabilities advertizes which capabilities this controller supports
-func (s controllerServer) ControllerGetCapabilities(context.Context, *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
+func (s controllerServer) ControllerGetCapabilities(ctx context.Context, r *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
 	cd := csi.ControllerServiceCapability{Type: &csi.ControllerServiceCapability_Rpc{Rpc: &csi.ControllerServiceCapability_RPC{Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME}}}
 	caps := []*csi.ControllerServiceCapability{&cd}
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: caps}, nil
+}
+
+func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+	// retrieve AWS creds from csi.CreateVolumeRequest.Secrets
+	_, _, ok := awsCreds(r.Secrets)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "iaas creds not found")
+	}
+	return nil, nil
+}
+
+// TODO: move this whole thing to iaas (?) package and see if creds can be put into a struct or something
+func awsCreds(s map[string]string) (string, string, bool) {
+	key, keyOk := s["AWS_ACCESS_KEY_ID"]
+	secret, secretOk := s["AWS_SECRET_ACCESS_KEY"]
+	return key, secret, keyOk && secretOk
 }
