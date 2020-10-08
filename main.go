@@ -7,6 +7,11 @@ import (
 	"net"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/irbekrm/csi-s3/internal/mount"
@@ -103,9 +108,42 @@ func (s controllerServer) ControllerGetCapabilities(ctx context.Context, r *csi.
 
 func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	// retrieve AWS creds from csi.CreateVolumeRequest.Secrets
-	_, _, ok := awsCreds(r.Secrets)
+	key, secret, ok := awsCreds(r.Secrets)
 	if !ok {
-		return nil, status.Error(codes.InvalidArgument, "iaas creds not found")
+		return nil, status.Error(codes.InvalidArgument, "iaas creds not provided")
+	}
+	bucket, ok := r.Parameters["bucket"]
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "bucket name not provided")
+	}
+	// TODO: do I need to validate these credentials?
+	creds := credentials.NewStaticCredentials(key, secret, "")
+	cfg := aws.NewConfig()
+	cfg = cfg.WithCredentials(creds)
+	// TODO: do I need to require for the region to be passed in params?
+	cfg = cfg.WithRegion("eu-west-2")
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "could not create an aws session")
+	}
+	// TODO: Call list tags on the bucket to determine if it is there
+	// TODO: Check the tags to see if it was created by this plugin? (Maybe no need to implement now, could just return in volume_context that it was not)
+	svc := s3.New(sess)
+	input := &s3.GetBucketTaggingInput{
+		Bucket: aws.String(bucket),
+	}
+	_, err = svc.GetBucketTagging(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println("Error:", aerr.Error())
+				return nil, status.Error(codes.InvalidArgument, "static bucket mounting requested, but bucket not found")
+			}
+		} else {
+			fmt.Println("Non-aws error:", err)
+			return nil, status.Error(codes.Internal, "error retrieving bucket tags: %v")
+		}
 	}
 	return nil, nil
 }
