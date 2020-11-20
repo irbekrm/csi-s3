@@ -121,12 +121,12 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 	cfg := aws.NewConfig()
 	cfg = cfg.WithCredentials(creds)
 	// TODO: do I need to require for the region to be passed in params?
-	cfg = cfg.WithRegion("eu-west-2")
+	cfg = cfg.WithRegion("us-east-1")
 	sess, err := session.NewSession(cfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not create an aws session")
 	}
-	// TODO: Call list tags on the bucket to determine if it is there
+
 	// TODO: Check the tags to see if it was created by this plugin? (Maybe no need to implement now, could just return in volume_context that it was not)
 	svc := s3.New(sess)
 	input := &s3.GetBucketTaggingInput{
@@ -136,12 +136,15 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
+			case "NoSuchTagSet":
+				// Bucket exists, but is not tagged. This is not an error
+				fmt.Printf("no tags found on bucket %s", bucket)
 			default:
-				fmt.Println("Error:", aerr.Error())
+				fmt.Println("error:", aerr.Error())
 				return nil, status.Error(codes.InvalidArgument, "static bucket mounting requested, but bucket not found")
 			}
 		} else {
-			fmt.Println("Non-aws error:", err)
+			fmt.Println("non-aws error:", err)
 			return nil, status.Error(codes.Internal, "error retrieving bucket tags: %v")
 		}
 	}
