@@ -26,6 +26,7 @@ type S3fs struct {
 	path string
 }
 
+// IsReady checks if s3fs binary is installed and valid
 func (s S3fs) IsReady() (bool, error) {
 	cmd := exec.Command(s.path, "--version")
 	stdoutPipe, err := cmd.StdoutPipe()

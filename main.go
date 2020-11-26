@@ -106,12 +106,16 @@ func (s controllerServer) ControllerGetCapabilities(ctx context.Context, r *csi.
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: caps}, nil
 }
 
+// CreateVolume verifies bucket's existence for a static bucket
 func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+
 	// retrieve AWS creds from csi.CreateVolumeRequest.Secrets
 	key, secret, ok := awsCreds(r.Secrets)
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "iaas creds not provided")
 	}
+
+	// retrieve bucket name and region from csi.CreateVolumeRequest.Parameters
 	bucket, ok := r.Parameters["bucket"]
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "bucket name not provided")
@@ -120,6 +124,8 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "region not provided")
 	}
+
+	// verify that the bucket exists and can be accessed using the provided credentials
 	// TODO: do I need to validate these credentials?
 	creds := credentials.NewStaticCredentials(key, secret, "")
 	cfg := aws.NewConfig()
@@ -130,7 +136,6 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not create an aws session")
 	}
-
 	// TODO: Check the tags to see if it was created by this plugin? (Maybe no need to implement now, could just return in volume_context that it was not)
 	svc := s3.New(sess)
 	input := &s3.GetBucketTaggingInput{
@@ -152,6 +157,7 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 			return nil, status.Error(codes.Internal, "error retrieving bucket tags: %v")
 		}
 	}
+
 	vol := csi.Volume{
 		VolumeId:      bucket,
 		VolumeContext: map[string]string{"region": region},
