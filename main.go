@@ -116,12 +116,16 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "bucket name not provided")
 	}
+	region, ok := r.Parameters["region"]
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "region not provided")
+	}
 	// TODO: do I need to validate these credentials?
 	creds := credentials.NewStaticCredentials(key, secret, "")
 	cfg := aws.NewConfig()
 	cfg = cfg.WithCredentials(creds)
 	// TODO: do I need to require for the region to be passed in params?
-	cfg = cfg.WithRegion("us-east-1")
+	cfg = cfg.WithRegion(region)
 	sess, err := session.NewSession(cfg)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not create an aws session")
@@ -148,7 +152,11 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 			return nil, status.Error(codes.Internal, "error retrieving bucket tags: %v")
 		}
 	}
-	return nil, nil
+	vol := csi.Volume{
+		VolumeId:      bucket,
+		VolumeContext: map[string]string{"region": region},
+	}
+	return &csi.CreateVolumeResponse{Volume: &vol}, nil
 }
 
 // TODO: move this whole thing to iaas (?) package and see if creds can be put into a struct or something
