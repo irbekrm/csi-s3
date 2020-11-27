@@ -12,7 +12,7 @@ const versionOutput string = "Amazon Simple Storage Service File System"
 func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 	switch mounter {
 	case "s3fs":
-		return S3fs{path: mounterBinaryPath}, nil
+		return s3fs{path: mounterBinaryPath}, nil
 	default:
 		return nil, fmt.Errorf("unknow mounter: %s", mounter)
 	}
@@ -22,12 +22,12 @@ type Mounter interface {
 	IsReady() (bool, error)
 }
 
-type S3fs struct {
+type s3fs struct {
 	path string
 }
 
 // IsReady checks if s3fs binary is installed and valid
-func (s S3fs) IsReady() (bool, error) {
+func (s s3fs) IsReady() (bool, error) {
 	cmd := exec.Command(s.path, "--version")
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
