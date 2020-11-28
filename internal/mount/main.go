@@ -3,6 +3,7 @@ package mount
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -20,6 +21,7 @@ func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 
 type Mounter interface {
 	IsReady() (bool, error)
+	Mount(string, string, string, string) error
 }
 
 type s3fs struct {
@@ -60,4 +62,26 @@ func (s s3fs) IsReady() (bool, error) {
 		return false, fmt.Errorf("Unexpected %s --version output: %s", s.path, string(stdout))
 	}
 	return true, nil
+}
+
+func (s s3fs) Mount(mountPath, bucket, accessKey, secret string) error {
+	// Storage provider is responsible for creating the directory
+	err := os.Mkdir(mountPath, os.ModePerm)
+	if os.IsExist(err) {
+		// TODO: check if the right volume is mounted there
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(s.path, bucket, mountPath)
+	// ensure the s3fs can read aws creds from env
+	keyKV, secretKV := awsEnvVarsKV(accessKey, secret)
+	cmd.Env = append(os.Environ(), keyKV, secretKV)
+	return cmd.Run()
+}
+
+func awsEnvVarsKV(accessKey, secret string) (string, string) {
+	return fmt.Sprintf("AWSACCESSKEYID=%s", accessKey), fmt.Sprintf("AWSSECRETACCESSKEY=%s", secret)
 }

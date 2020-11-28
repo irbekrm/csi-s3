@@ -48,15 +48,24 @@ func main() {
 		os.Exit(1)
 	}
 	defer l.Close()
+
 	m, err := mount.NewMounter(mounter, mounterBinaryPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up mount backend: %v", err)
 	}
+
 	s := grpc.NewServer()
+
+	// register CSI Identity service
 	i := identityServer{driverVersion: driverVersion, mounter: m}
 	csi.RegisterIdentityServer(s, &i)
+	// register CSI Controller service
 	c := controllerServer{}
 	csi.RegisterControllerServer(s, c)
+	// register CSI Node service
+	n := nodeServer{mounter: m}
+	csi.RegisterNodeServer(s, n)
+	// For debugging purposes register reflection service
 	reflection.Register(s)
 
 	if err := s.Serve(l); err != nil {
@@ -162,7 +171,38 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 		VolumeId:      bucket,
 		VolumeContext: map[string]string{"region": region},
 	}
-	return &csi.CreateVolumeResponse{Volume: &vol}, nil
+	return &csi.CreateVolumeResponse{Volume: &vol}, status.Error(codes.OK, "")
+}
+
+type nodeServer struct {
+	*csi.UnimplementedNodeServer
+	mounter mount.Mounter
+}
+
+// NodePublishVolume mounts the volume at the specified path (in the container). Safe to be called multiple times
+func (n nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	bucket := in.VolumeId
+
+	// retrieve AWS creds from csi.NodePublishVolumeRequest.Secrets
+	key, secret, ok := awsCreds(in.Secrets)
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "iaas creds not provided")
+	}
+
+	targetPath := in.TargetPath
+
+	err := n.mounter.Mount(targetPath, bucket, key, secret)
+
+	if err != nil {
+		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Internal, err.Error())
+	} else {
+		return &csi.NodePublishVolumeResponse{}, status.Error(codes.OK, "")
+	}
+}
+
+// NodeUnpublishVolume unmounts the volume from the given target path. Safe to be called multiple times
+func (n nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	return nil, nil
 }
 
 // TODO: move this whole thing to iaas (?) package and see if creds can be put into a struct or something
