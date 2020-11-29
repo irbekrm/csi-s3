@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-s3-debug
+  labels:
+    app: csi-s3-debug
+spec:
+  selector:
+    matchLabels:
+      app: csi-s3-debug
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-s3-debug
+    spec:
+      containers:
+      - name: csi-s3
+        image: irbekrm/csi-s3:latest
+        command: ["csi-s3"]
+        args: ["--csi-address=/csi/csi.sock"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /csi
+      - name: grpcurl
+        image: networld/grpcurl
+        command: ["sleep"]
+        args: ["3000"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /csi
+      volumes:
+      - name: socket-dir
+        emptyDir: {}
