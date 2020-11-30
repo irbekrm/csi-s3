@@ -6,6 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
+
+	"github.com/google/fscrypt/filesystem"
 )
 
 const versionOutput string = "Amazon Simple Storage Service File System"
@@ -22,6 +25,7 @@ func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 type Mounter interface {
 	IsReady() (bool, error)
 	Mount(string, string, string, string) error
+	Unmount(string) (bool, error)
 }
 
 type s3fs struct {
@@ -80,6 +84,34 @@ func (s s3fs) Mount(mountPath, bucket, accessKey, secret string) error {
 	keyKV, secretKV := awsEnvVarsKV(accessKey, secret)
 	cmd.Env = append(os.Environ(), keyKV, secretKV)
 	return cmd.Run()
+}
+
+// UnMount idempotently unmounts filesystem mounted at targetPath and deletes the targetPath directory
+func (s s3fs) Unmount(targetPath string) (bool, error) {
+	found := false
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		// targetPath does not exist
+		return found, nil
+	}
+	fss, err := filesystem.AllFilesystems()
+	if err != nil {
+		return found, fmt.Errorf("failed listing mounted filesystems: %v", err)
+	}
+	for _, fs := range fss {
+		// found filesystem mounted at targetPath
+		if fs.Path == targetPath {
+			found = true
+			err := syscall.Unmount(targetPath, 0)
+			if err != nil {
+				return found, fmt.Errorf("failed unmounting filesystem mounted at %s: %v", targetPath, err)
+			}
+		}
+	}
+	// delete targetPath directory
+	if err := os.Remove(targetPath); err != nil {
+		return found, fmt.Errorf("failed removing target path %s: %v", targetPath, err)
+	}
+	return found, nil
 }
 
 func awsEnvVarsKV(accessKey, secret string) (string, string) {

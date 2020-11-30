@@ -202,7 +202,16 @@ func (n nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishVo
 
 // NodeUnpublishVolume unmounts the volume from the given target path. Safe to be called multiple times
 func (n nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-	return nil, nil
+	targetPath := in.TargetPath
+	found, err := n.mounter.Unmount(targetPath)
+	resp := &csi.NodeUnpublishVolumeResponse{}
+	if err != nil {
+		return resp, status.Error(codes.Internal, err.Error())
+	}
+	if !found {
+		return resp, status.Error(codes.NotFound, "volume not found")
+	}
+	return resp, nil
 }
 
 // TODO: move this whole thing to iaas (?) package and see if creds can be put into a struct or something

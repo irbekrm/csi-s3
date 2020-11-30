@@ -34,4 +34,12 @@ FROM alpine
 COPY --from=build /usr/bin/s3fs /usr/bin/s3fs
 COPY --from=build /app/outputs/csi-s3 /usr/bin/csi-s3
 
+RUN apk --no-cache add \
+      ca-certificates \
+      fuse \
+      libxml2 \
+      libcurl \
+      libgcc \
+      libstdc++
+
 ENTRYPOINT ["csi-s3", "--csi-address=/csi/csi.sock"]

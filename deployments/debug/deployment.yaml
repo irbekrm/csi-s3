@@ -18,7 +18,7 @@ spec:
       - name: csi-s3
         image: irbekrm/csi-s3:latest
         command: ["csi-s3"]
-        args: ["--csi-address=/csi/csi.sock"]
+        args: ["--csi-address=/csi/csi.sock", "--mounterBinaryPath=/usr/bin/s3fs"]
         securityContext:
           privileged: true
         volumeMounts:
