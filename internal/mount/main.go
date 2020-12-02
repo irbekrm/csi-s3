@@ -6,12 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
-
-	"github.com/google/fscrypt/filesystem"
 )
 
 const versionOutput string = "Amazon Simple Storage Service File System"
+const fsType string = "fuse.s3fs"
 
 func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 	switch mounter {
@@ -24,8 +22,9 @@ func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 
 type Mounter interface {
 	IsReady() (bool, error)
-	Mount(string, string, string, string) error
+	Mount(string, string, string, string, bool) error
 	Unmount(string) (bool, error)
+	Type() string
 }
 
 type s3fs struct {
@@ -68,17 +67,7 @@ func (s s3fs) IsReady() (bool, error) {
 	return true, nil
 }
 
-func (s s3fs) Mount(mountPath, bucket, accessKey, secret string) error {
-	// Storage provider is responsible for creating the directory
-	err := os.Mkdir(mountPath, os.ModePerm)
-	if os.IsExist(err) {
-		// TODO: check if the right volume is mounted there
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
+func (s s3fs) Mount(mountPath, bucket, accessKey, secret string, readonly bool) error {
 	cmd := exec.Command(s.path, bucket, mountPath)
 	// ensure the s3fs can read aws creds from env
 	keyKV, secretKV := awsEnvVarsKV(accessKey, secret)
@@ -86,32 +75,8 @@ func (s s3fs) Mount(mountPath, bucket, accessKey, secret string) error {
 	return cmd.Run()
 }
 
-// UnMount idempotently unmounts filesystem mounted at targetPath and deletes the targetPath directory
-func (s s3fs) Unmount(targetPath string) (bool, error) {
-	found := false
-	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
-		// targetPath does not exist
-		return found, nil
-	}
-	fss, err := filesystem.AllFilesystems()
-	if err != nil {
-		return found, fmt.Errorf("failed listing mounted filesystems: %v", err)
-	}
-	for _, fs := range fss {
-		// found filesystem mounted at targetPath
-		if fs.Path == targetPath {
-			found = true
-			err := syscall.Unmount(targetPath, 0)
-			if err != nil {
-				return found, fmt.Errorf("failed unmounting filesystem mounted at %s: %v", targetPath, err)
-			}
-		}
-	}
-	// delete targetPath directory
-	if err := os.Remove(targetPath); err != nil {
-		return found, fmt.Errorf("failed removing target path %s: %v", targetPath, err)
-	}
-	return found, nil
+func (s3fs) Type() string {
+	return fsType
 }
 
 func awsEnvVarsKV(accessKey, secret string) (string, string) {

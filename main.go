@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/irbekrm/csi-s3/internal/filesystem"
 	"github.com/irbekrm/csi-s3/internal/mount"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -53,6 +54,7 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up mount backend: %v", err)
 	}
+	fs := filesystem.NewFS()
 
 	s := grpc.NewServer()
 
@@ -63,7 +65,7 @@ func main() {
 	c := controllerServer{}
 	csi.RegisterControllerServer(s, c)
 	// register CSI Node service
-	n := nodeServer{mounter: m}
+	n := nodeServer{mounter: m, fs: fs}
 	csi.RegisterNodeServer(s, n)
 	// For debugging purposes register reflection service
 	reflection.Register(s)
@@ -177,41 +179,56 @@ func (s controllerServer) CreateVolume(ctx context.Context, r *csi.CreateVolumeR
 type nodeServer struct {
 	*csi.UnimplementedNodeServer
 	mounter mount.Mounter
+	fs      filesystem.FS
 }
 
 // NodePublishVolume mounts the volume at the specified path (in the container). Safe to be called multiple times
 func (n nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	bucket := in.VolumeId
+	// TODO: first verify that the bucket (volume_id) exists
+	// check if a mount already exists at the targetPath
+	targetPath := in.TargetPath
+	m, err := n.fs.FindMount(targetPath)
+	if err != nil {
+		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Internal, err.Error())
+	}
 
+	// if a mount already exists at targetPath, check that it's the right one
+	//TODO: match volume_id
+	readonly := in.Readonly
+	if m != nil {
+		matches := m.Match(n.mounter.Type(), readonly)
+		if !matches {
+			return &csi.NodePublishVolumeResponse{}, status.Error(codes.AlreadyExists, "")
+		} else {
+			return &csi.NodePublishVolumeResponse{}, status.Error(codes.OK, "")
+		}
+	}
+
+	// mount does not yet exist, proceed
+	if err := n.fs.EnsureDirExists(targetPath); err != nil {
+		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Internal, err.Error())
+	}
+	bucket := in.VolumeId
 	// retrieve AWS creds from csi.NodePublishVolumeRequest.Secrets
 	key, secret, ok := awsCreds(in.Secrets)
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "iaas creds not provided")
 	}
-
-	targetPath := in.TargetPath
-
-	err := n.mounter.Mount(targetPath, bucket, key, secret)
-
-	if err != nil {
+	if err := n.mounter.Mount(targetPath, bucket, key, secret, false); err != nil {
 		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Internal, err.Error())
-	} else {
-		return &csi.NodePublishVolumeResponse{}, status.Error(codes.OK, "")
 	}
+	return &csi.NodePublishVolumeResponse{}, status.Error(codes.OK, "")
 }
 
-// NodeUnpublishVolume unmounts the volume from the given target path. Safe to be called multiple times
+// NodeUnpublishVolume idempotently unmounts the volume from the given target path
 func (n nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	// TODO: first verify that the bucket (volume_id) exists
 	targetPath := in.TargetPath
-	found, err := n.mounter.Unmount(targetPath)
 	resp := &csi.NodeUnpublishVolumeResponse{}
-	if err != nil {
+	if err := n.fs.EnsureMountRemoved(targetPath); err != nil {
 		return resp, status.Error(codes.Internal, err.Error())
 	}
-	if !found {
-		return resp, status.Error(codes.NotFound, "volume not found")
-	}
-	return resp, nil
+	return resp, status.Error(codes.OK, "")
 }
 
 // TODO: move this whole thing to iaas (?) package and see if creds can be put into a struct or something
