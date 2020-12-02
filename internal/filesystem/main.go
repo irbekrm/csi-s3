@@ -18,9 +18,26 @@ type FS interface {
 }
 
 // NewFS returns an FS implementation that will interact with actual filesystem
-func NewFS() FS {
-	return fs{
+func NewFS(opts ...option) FS {
+	f := fs{
 		sys: sys{},
+	}
+	f.applyOptions(opts...)
+	return f
+}
+
+type option func(*fs)
+
+func (f *fs) applyOptions(opts ...option) {
+	for _, o := range opts {
+		o(f)
+	}
+}
+
+// WithSys allows to optionally provide a custom Sys interface implementation
+func WithSys(sys Sys) option {
+	return func(f *fs) {
+		f.sys = sys
 	}
 }
 
@@ -45,18 +62,26 @@ func (f fs) FindMount(path string) (Matcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	return mount{readonly: mnt.ReadOnly, fsType: mnt.FilesystemType}, nil
+	return NewMatcher(mnt.ReadOnly, mnt.FilesystemType), nil
 }
 
 // EnsureMountRemoved idempotently removes mounted filesystem
 func (f fs) EnsureMountRemoved(path string) error {
-	if _, err := f.sys.Stat(path); os.IsNotExist(err) {
+	_, err := f.sys.Stat(path)
+	if os.IsNotExist(err) {
 		return nil
 	}
-	_, err := f.sys.GetMount(path)
+	if err != nil {
+		return err
+	}
+	_, err = f.sys.GetMount(path)
 	if err != nil && strings.Contains(err.Error(), "is not a mountpoint") {
 		return f.sys.Remove(path)
 	}
+	if err != nil {
+		return err
+	}
+	// if we are here, a mount has been found- try to unmount
 	if err := f.sys.Unmount(path); err != nil {
 		return err
 	}
@@ -75,16 +100,21 @@ func (f fs) EnsureDirExists(path string) error {
 	}
 	// a file exists at the path, check that it's a directory
 	//TODO: check permissions
-	if finfo.Mode().IsDir() {
+	if f.sys.IsDir(finfo) {
 		return nil
 	}
 	// should never get to this line
-	return fmt.Errorf("file with permissions %s found at path %s", finfo.Mode().Perm().String(), path)
+	return fmt.Errorf("unknown file found at target path %s", path)
 }
 
 // TODO: Match should check for volume capabilities
 type Matcher interface {
 	Match(string, bool) bool
+}
+
+// NewMatcher returns an implementation of Matcher interface
+func NewMatcher(readonly bool, fsType string) Matcher {
+	return mount{readonly, fsType}
 }
 
 type mount struct {
@@ -104,6 +134,7 @@ type Sys interface {
 	Remove(string) error
 	GetMount(string) (*filesystem.Mount, error)
 	Mkdir(string, os.FileMode) error
+	IsDir(os.FileInfo) bool
 }
 
 type sys struct{}
@@ -131,4 +162,9 @@ func (s sys) GetMount(path string) (*filesystem.Mount, error) {
 // Mkdir is a wrapper around os.Mkdir
 func (s sys) Mkdir(path string, perm os.FileMode) error {
 	return os.Mkdir(path, perm)
+}
+
+// IsDir checks file info to see if it's a directory
+func (s sys) IsDir(finfo os.FileInfo) bool {
+	return finfo.Mode().IsDir()
 }

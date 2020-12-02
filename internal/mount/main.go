@@ -23,7 +23,6 @@ func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
 type Mounter interface {
 	IsReady() (bool, error)
 	Mount(string, string, string, string, bool) error
-	Unmount(string) (bool, error)
 	Type() string
 }
 
