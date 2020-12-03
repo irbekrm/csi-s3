@@ -1,5 +1,6 @@
 package mount
 
+//go:generate mockgen -source=main.go -destination=../../mocks/mock_mount.go -package=mocks
 import (
 	"fmt"
 	"io/ioutil"

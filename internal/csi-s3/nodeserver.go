@@ -35,8 +35,8 @@ func (n *nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishV
 	//TODO: match volume_id
 	readonly := in.Readonly
 	if m != nil {
-		matches := m.Match(n.mounter.Type(), readonly)
-		if !matches {
+		ok := m.Match(n.mounter.Type(), readonly)
+		if !ok {
 			return &csi.NodePublishVolumeResponse{}, status.Error(codes.AlreadyExists, "")
 		} else {
 			return &csi.NodePublishVolumeResponse{}, status.Error(codes.OK, "")
