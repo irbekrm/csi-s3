@@ -71,6 +71,7 @@ The gRPC API of `csi-s3` implements a subset of the functionality described by t
 - Node Service
    - [NodePublishVolume](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodepublishvolume) RPC - mounts an already existing bucket
    - [NodeUnpublishVolume](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodeunpublishvolume) RPC - unmounts a bucket
+   - [NodeGetInfo](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodegetinfo) RPC - node id (from plugin's perspective)
 
 - Identity Service
 

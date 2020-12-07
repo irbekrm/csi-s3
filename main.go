@@ -20,11 +20,13 @@ func main() {
 		driverVersion     string
 		mounter           string
 		mounterBinaryPath string
+		nodeid            string
 	)
 	flag.StringVar(&csiAddress, "csi-address", "/csi/csi.sock", "Path of the UDS on which the gRPC server will serve Identity, Node, Controller services")
 	flag.StringVar(&driverVersion, "v", "test", "driver release version")
 	flag.StringVar(&mounter, mounter, "s3fs", "Mount backend. Currently only s3fs is supported")
 	flag.StringVar(&mounterBinaryPath, "mounterBinaryPath", "/usr/local/bin/s3fs", "Path to the selected mount backend binary")
+	flag.StringVar(&nodeid, "nodeid", "", "id of the kubernetes node on which this driver is currently running")
 	flag.Parse()
 
 	if err := os.RemoveAll(csiAddress); err != nil {
@@ -50,7 +52,7 @@ func main() {
 	csi.RegisterIdentityServer(s, i)
 
 	// register CSI Node service
-	n := csis3.NewNodeServer(m, fs)
+	n := csis3.NewNodeServer(m, fs, nodeid)
 	csi.RegisterNodeServer(s, n)
 
 	// For debugging purposes register reflection service

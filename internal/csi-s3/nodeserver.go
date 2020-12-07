@@ -11,14 +11,15 @@ import (
 )
 
 // NewNodeServer returns a csi.NodeServer implementation
-func NewNodeServer(mounter mount.Mounter, fs filesystem.FS) csi.NodeServer {
-	return &nodeServer{mounter: mounter, fs: fs}
+func NewNodeServer(mounter mount.Mounter, fs filesystem.FS, nodeId string) csi.NodeServer {
+	return &nodeServer{mounter: mounter, fs: fs, nodeId: nodeId}
 }
 
 type nodeServer struct {
 	*csi.UnimplementedNodeServer
 	mounter mount.Mounter
 	fs      filesystem.FS
+	nodeId  string
 }
 
 // NodePublishVolume mounts the volume at the specified path (in the container). Safe to be called multiple times
@@ -68,4 +69,11 @@ func (n *nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpubl
 		return resp, status.Error(codes.Internal, err.Error())
 	}
 	return resp, status.Error(codes.OK, "")
+}
+
+func (n *nodeServer) NodeGetInfo(ctx context.Context, in *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	if n.nodeId == "" {
+		return &csi.NodeGetInfoResponse{}, status.Error(codes.Internal, "node id not found")
+	}
+	return &csi.NodeGetInfoResponse{NodeId: n.nodeId}, status.Error(codes.OK, "")
 }

@@ -146,3 +146,43 @@ func Test_nodeServer_NodePublishVolume(t *testing.T) {
 		})
 	}
 }
+
+func Test_nodeServer_NodeGetInfo(t *testing.T) {
+	tests := []struct {
+		name    string
+		nodeId  string
+		in      *csi.NodeGetInfoRequest
+		want    *csi.NodeGetInfoResponse
+		RPCCode codes.Code
+		wantErr bool
+	}{
+		{
+			name:    "success",
+			nodeId:  "some id",
+			want:    &csi.NodeGetInfoResponse{NodeId: "some id"},
+			RPCCode: codes.OK,
+		},
+		{
+			name:    "failure, node id not found",
+			want:    &csi.NodeGetInfoResponse{},
+			RPCCode: codes.Internal,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.TODO()
+			n := &nodeServer{
+				nodeId: tt.nodeId,
+			}
+			got, err := n.NodeGetInfo(ctx, tt.in)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("nodeServer.NodeGetInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("nodeServer.NodeGetInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
