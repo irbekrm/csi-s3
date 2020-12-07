@@ -1,0 +1,64 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-s3
+spec:
+  selector:
+    matchLabels:
+      app: csi-s3
+  template:
+    metadata:
+      labels:
+        app: csi-s3
+    spec:
+      serviceAccountName: csi-s3
+      hostNetwork: true
+      containers:
+      - name: csi-s3
+        image: irbekrm/csi-s3:latest
+        imagePullPolicy: Always
+        command: ["csi-s3"]
+        args: 
+        - "--csi-address=/csi/csi.sock"
+        - "--mounterBinaryPath=/usr/bin/s3fs"
+        - "--nodeid=$(KUBE_NODE_NAME)"
+        securityContext:
+          privileged: true
+        env:
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: plugin-dir
+          mountPath: /csi
+      - name: csi-driver-registrar
+        image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
+        args:
+          - "--csi-address=/csi/csi.sock"
+          - "--kubelet-registration-path=/var/lib/kubelet/plugins/s3.csi.irbe.dev/csi.sock"
+        volumeMounts:
+          - name: plugin-dir
+            mountPath: /csi
+          - name: registration-dir
+            mountPath: /registration
+        ports:
+          - containerPort: 9809
+            name: healthz
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+      volumes:
+      - name: registration-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins_registry/
+          type: Directory
+      - name: plugin-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins/s3.csi.irbe.dev/
+          type: DirectoryOrCreate
