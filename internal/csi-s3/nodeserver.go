@@ -71,9 +71,15 @@ func (n *nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpubl
 	return resp, status.Error(codes.OK, "")
 }
 
+// NodeGetInfo returns node info that this driver is aware of
 func (n *nodeServer) NodeGetInfo(ctx context.Context, in *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	if n.nodeId == "" {
 		return &csi.NodeGetInfoResponse{}, status.Error(codes.Internal, "node id not found")
 	}
 	return &csi.NodeGetInfoResponse{NodeId: n.nodeId}, status.Error(codes.OK, "")
+}
+
+// NodeGetCapabilities returns info about which *optional* node capabilities this driver implements
+func (n *nodeServer) NodeGetCapabilities(ctx context.Context, in *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+	return &csi.NodeGetCapabilitiesResponse{}, status.Error(codes.OK, "")
 }
