@@ -18,7 +18,7 @@ const (
 	envVarAwsSecretKey string = "AWSSECRETACCESSKEY"
 )
 
-func NewMounter(mounter, mounterBinaryPath string) (Mounter, error) {
+func New(mounter, mounterBinaryPath string) (Mounter, error) {
 	switch mounter {
 	case "s3fs":
 		return s3fs{mounterBinaryPath, run}, nil

@@ -97,7 +97,7 @@ func Test_fs_FindMount(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			sys := tt.setup(ctrl, tt.path)
-			f := filesystem.NewFS(filesystem.WithSys(sys))
+			f := filesystem.New(filesystem.WithSys(sys))
 			got, err := f.FindMount(tt.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fs.FindMount() error = %v, wantErr %v", err, tt.wantErr)
@@ -273,7 +273,7 @@ func Test_fs_EnsureMountRemoved(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			sys := tt.setup(ctrl, tt.path, tt.wantedErr)
-			f := filesystem.NewFS(filesystem.WithSys(sys))
+			f := filesystem.New(filesystem.WithSys(sys))
 			if err := f.EnsureMountRemoved(tt.path); (err != nil) != tt.wantErr {
 				t.Errorf("fs.EnsureMountRemoved() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -372,7 +372,7 @@ func Test_fs_EnsureDirExists(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			sys := tt.setup(ctrl, tt.path, tt.wantedErr, tt.finfo)
-			f := filesystem.NewFS(filesystem.WithSys(sys))
+			f := filesystem.New(filesystem.WithSys(sys))
 			if err := f.EnsureDirExists(tt.path); (err != nil) != tt.wantErr {
 				t.Errorf("fs.EnsureDirExists() error = %v, wantErr %v", err, tt.wantErr)
 			}

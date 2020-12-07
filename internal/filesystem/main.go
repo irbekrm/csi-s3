@@ -17,8 +17,8 @@ type FS interface {
 	EnsureDirExists(string) error
 }
 
-// NewFS returns an FS implementation that will interact with actual filesystem
-func NewFS(opts ...option) FS {
+// New returns an FS implementation that will interact with actual filesystem
+func New(opts ...option) FS {
 	f := fs{
 		sys: sys{},
 	}

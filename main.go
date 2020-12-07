@@ -37,11 +37,11 @@ func main() {
 	}
 	defer l.Close()
 
-	m, err := mount.NewMounter(mounter, mounterBinaryPath)
+	m, err := mount.New(mounter, mounterBinaryPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to set up mount backend: %v", err)
 	}
-	fs := filesystem.NewFS()
+	fs := filesystem.New()
 
 	s := grpc.NewServer()
 
