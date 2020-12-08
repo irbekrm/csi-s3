@@ -1,7 +1,7 @@
 # csi-s3
 CSI Driver for S3 via FUSE
 
-:warning: This project is currently in pre-alpha state and is not yet usable. See [below](###Manually-testing-the-API) for how to try it out :warning:
+:warning: This project is currently in pre-alpha state and is not yet usable. See [below](###Deploying-on-Kubernetes) for how to try it out :warning:
 
 ## Description
 
@@ -56,9 +56,15 @@ To regenerate the mocks:
 
 2. Run `GOOS=linux GOARCH=amd64 go generate ./...`
 
-### Manually testing the API
+### Deploying on Kubernetes
 
-This project is currently in pre-alpha state and is not yet usable with Kubernetes.
+1. Deploy `csi-s3` driver (as a Daemonset), RBAC resources and a `CSIDriver` custom resource
+
+`kubectl apply -f deployments/`
+
+2. See [/examples](examples/README.md) for how to create a Persistent Volume backed by `csi-s3` and use it
+
+### Manually testing the API
 
 See [/deployments/debug](deployments/debug/README.md) directory for an example of how to run csi-s3 and manually test the API.
 

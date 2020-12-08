@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-s3-test
+spec:
+  selector:
+    matchLabels:
+      app: csi-s3-test
+  template:
+    metadata:
+      labels:
+        app: csi-s3-test
+    spec:
+      containers:
+      - name: csi-s3-test
+        image: busybox
+        command:
+        - sleep
+        - infinity
+        volumeMounts:
+        - name: csi-s3-pvc
+          mountPath: /data
+      volumes:
+      - name: csi-s3-pvc
+        persistentVolumeClaim:
+          claimName: csi-s3-pvc
