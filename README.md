@@ -1,7 +1,7 @@
 # csi-s3
 CSI Driver for S3 via FUSE
 
-:warning: This project is currently in pre-alpha state and is not yet usable. See [below](###Deploying-on-Kubernetes) for how to try it out :warning:
+:warning: This project is currently in pre-alpha state and is not yet usable. See [below](#deploying-on-kubernetes) for how to try it out :warning:
 
 ## Description
 
@@ -26,7 +26,7 @@ It exposes a gRPC API over a Unix Domain Socket. The RPCs in this API are called
 
 Mounting S3 to filesystem is possible via [FUSE](https://en.wikipedia.org/wiki/Filesystem_in_Userspace).
 
-`csi-s3` invokes [higher level tools](##supported-mounters) that do the actual mounting.
+`csi-s3` invokes [higher level tools](#supported-mounters) that do the actual mounting.
 ## Development
 ### Tests
 
@@ -38,7 +38,7 @@ To run the unit tests (using Docker) on any OS:
 
 2. From the root of repository run `./scripts/local_test.sh`
 
-If you have made any code changes, you might also want to regenerate the [mocks](###Mocks)
+If you have made any code changes, you might also want to regenerate the [mocks](#mocks)
 
 ### Build
 
@@ -48,7 +48,7 @@ Run `GOOS=linux GOARCH=amd64 go build -o outputs/csi-s3`
 
 ### Mocks
 
-This project uses generated [gomock](https://github.com/golang/mock) mocks for unit testing. The generated mocks are in the /mocks directory
+This project uses generated [gomock](https://github.com/golang/mock) mocks for unit testing. The generated mocks are at `/mocks`
 
 To regenerate the mocks:
 
@@ -66,7 +66,7 @@ To regenerate the mocks:
 
 ### Manually testing the API
 
-See [/deployments/debug](deployments/debug/README.md) directory for an example of how to run csi-s3 and manually test the API.
+See [/deployments/debug](deployments/debug/README.md) for an example of how to run `csi-s3` and manually test the API.
 
 ### CSI Compatibility
 
@@ -78,6 +78,7 @@ The gRPC API of `csi-s3` implements a subset of the functionality described by t
    - [NodePublishVolume](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodepublishvolume) RPC - mounts an already existing bucket
    - [NodeUnpublishVolume](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodeunpublishvolume) RPC - unmounts a bucket
    - [NodeGetInfo](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodegetinfo) RPC - node id (from plugin's perspective)
+   - [NodeGetCapabilities](https://github.com/container-storage-interface/spec/blob/master/spec.md#nodegetcapabilities) RPC- optional node capabilities that the driver implements
 
 - Identity Service
 
