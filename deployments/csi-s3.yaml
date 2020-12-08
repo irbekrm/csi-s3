@@ -23,6 +23,7 @@ spec:
         - "--csi-address=/csi/csi.sock"
         - "--mounterBinaryPath=/usr/bin/s3fs"
         - "--nodeid=$(KUBE_NODE_NAME)"
+        - "--v=4"
         securityContext:
           privileged: true
         env:
@@ -44,15 +45,6 @@ spec:
             mountPath: /csi
           - name: registration-dir
             mountPath: /registration
-        ports:
-          - containerPort: 9809
-            name: healthz
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: healthz
-          initialDelaySeconds: 5
-          timeoutSeconds: 5
       volumes:
       - name: registration-dir
         hostPath:

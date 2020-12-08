@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"k8s.io/klog"
 )
 
 const (
@@ -60,6 +61,8 @@ func (s s3fs) IsReady() (bool, error) {
 // accessKey and secretKey are used to authenticate with AWS
 // readonly determines if the mounted filesystem will be readonly
 func (s s3fs) Mount(path, bucket, accessKey, secretKey string, readonly bool) error {
+	klog.V(2).Infof("mounting %v at %v", bucket, path)
+
 	cmd := exec.Command(s.path, bucket, path)
 	// ensure the s3fs can read aws creds from env
 	keyKV, secretKV := awsEnvVarsKV(accessKey, secretKey)

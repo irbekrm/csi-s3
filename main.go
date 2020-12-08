@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"os"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/irbekrm/csi-s3/internal/mount"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"k8s.io/klog"
 )
 
 func main() {
@@ -23,25 +23,30 @@ func main() {
 		nodeid            string
 	)
 	flag.StringVar(&csiAddress, "csi-address", "/csi/csi.sock", "Path of the UDS on which the gRPC server will serve Identity, Node, Controller services")
-	flag.StringVar(&driverVersion, "v", "test", "driver release version")
+	flag.StringVar(&driverVersion, "driver-version", "test", "driver release version")
 	flag.StringVar(&mounter, mounter, "s3fs", "Mount backend. Currently only s3fs is supported")
 	flag.StringVar(&mounterBinaryPath, "mounterBinaryPath", "/usr/local/bin/s3fs", "Path to the selected mount backend binary")
 	flag.StringVar(&nodeid, "nodeid", "", "id of the kubernetes node on which this driver is currently running")
+
+	klog.InitFlags(nil)
+
 	flag.Parse()
 
 	if err := os.RemoveAll(csiAddress); err != nil {
-		fmt.Fprintf(os.Stderr, "could not remove socket %s: %v", csiAddress, err)
+		klog.Errorf("could not remove socket %s: %v", csiAddress, err)
 	}
 	l, err := net.Listen("unix", csiAddress)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "could not listen on %s: %v", csiAddress, err)
+		klog.Errorf("could not listen on %s: %v", csiAddress, err)
 		os.Exit(1)
 	}
+	klog.V(1).Infof("listening on unix socket at %s", csiAddress)
 	defer l.Close()
 
 	m, err := mount.New(mounter, mounterBinaryPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to set up mount backend: %v", err)
+		klog.Errorf("failed to set up mount backend: %v", err)
+		os.Exit(1)
 	}
 	fs := filesystem.New()
 
@@ -59,7 +64,7 @@ func main() {
 	reflection.Register(s)
 
 	if err := s.Serve(l); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to run grpc server: %v", err)
+		klog.Errorf("failed to run grpc server: %v", err)
 		os.Exit(1)
 	}
 }

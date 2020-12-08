@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/google/fscrypt/filesystem"
+	"k8s.io/klog"
 )
 
 // FS contains high level methods for interacting with filesystem
@@ -67,6 +68,8 @@ func (f fs) FindMount(path string) (Matcher, error) {
 
 // EnsureMountRemoved idempotently removes mounted filesystem
 func (f fs) EnsureMountRemoved(path string) error {
+	klog.V(2).Infof("removing %v", path)
+
 	_, err := f.sys.Stat(path)
 	if os.IsNotExist(err) {
 		return nil

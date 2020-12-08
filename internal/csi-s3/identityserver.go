@@ -8,6 +8,7 @@ import (
 	"github.com/irbekrm/csi-s3/internal/mount"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 const (
@@ -27,6 +28,7 @@ type identityServer struct {
 
 // GetPluginInfo returns information about this CSI plugin
 func (s *identityServer) GetPluginInfo(ctx context.Context, r *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+	klog.V(4).Infof("IdentityServer.GetPluginInfo called with %+v", r)
 	m := map[string]string{"url": driverRepo}
 	return &csi.GetPluginInfoResponse{
 		Name:          driverName,
@@ -37,11 +39,13 @@ func (s *identityServer) GetPluginInfo(ctx context.Context, r *csi.GetPluginInfo
 
 // GetPluginCapabilities advertizes what non-default plugin capabilities this plugin has
 func (s *identityServer) GetPluginCapabilities(ctx context.Context, r *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+	klog.V(4).Infof("IdentityServer.GetPluginCapabilities called with %+v", r)
 	return &csi.GetPluginCapabilitiesResponse{}, nil
 }
 
 // Probe checks whether the plugin is functioning
 func (s *identityServer) Probe(ctx context.Context, r *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	klog.V(4).Infof("IdentityServer.Probe called with %+v", r)
 	ready, err := s.mounter.IsReady()
 	if err != nil {
 		err = status.Error(codes.FailedPrecondition, err.Error())

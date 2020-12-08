@@ -6,8 +6,10 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/irbekrm/csi-s3/internal/filesystem"
 	"github.com/irbekrm/csi-s3/internal/mount"
+	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 // NewNodeServer returns a csi.NodeServer implementation
@@ -24,6 +26,7 @@ type nodeServer struct {
 
 // NodePublishVolume mounts the volume at the specified path (in the container). Safe to be called multiple times
 func (n *nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	klog.V(4).Infof("NodeServer.NodePublishVolume called with %+v", protosanitizer.StripSecrets(in))
 	// TODO: first verify that the bucket (volume_id) exists
 	// check if a mount already exists at the targetPath
 	targetPath := in.TargetPath
@@ -62,6 +65,7 @@ func (n *nodeServer) NodePublishVolume(ctx context.Context, in *csi.NodePublishV
 
 // NodeUnpublishVolume idempotently unmounts the volume from the given target path
 func (n *nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	klog.V(4).Infof("NodeServer.NodeUnpublishVolume called with %+v", protosanitizer.StripSecrets(in))
 	// TODO: first verify that the bucket (volume_id) exists
 	targetPath := in.TargetPath
 	resp := &csi.NodeUnpublishVolumeResponse{}
@@ -73,6 +77,7 @@ func (n *nodeServer) NodeUnpublishVolume(ctx context.Context, in *csi.NodeUnpubl
 
 // NodeGetInfo returns node info that this driver is aware of
 func (n *nodeServer) NodeGetInfo(ctx context.Context, in *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	klog.V(4).Infof("NodeServer.NodeGetInfo called with %+v", in)
 	if n.nodeId == "" {
 		return &csi.NodeGetInfoResponse{}, status.Error(codes.Internal, "node id not found")
 	}
@@ -81,5 +86,6 @@ func (n *nodeServer) NodeGetInfo(ctx context.Context, in *csi.NodeGetInfoRequest
 
 // NodeGetCapabilities returns info about which *optional* node capabilities this driver implements
 func (n *nodeServer) NodeGetCapabilities(ctx context.Context, in *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+	klog.V(4).Infof("NodeServer.NodeGetCapabilities called with %+v", in)
 	return &csi.NodeGetCapabilitiesResponse{}, status.Error(codes.OK, "")
 }
