@@ -35,6 +35,9 @@ spec:
         volumeMounts:
         - name: plugin-dir
           mountPath: /csi
+        - name: mountpoint-dir
+          mountPath: /var/lib/kubelet/pods
+          mountPropagation: Bidirectional
       - name: csi-driver-registrar
         image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
         args:
@@ -54,3 +57,7 @@ spec:
         hostPath:
           path: /var/lib/kubelet/plugins/s3.csi.irbe.dev/
           type: DirectoryOrCreate
+      - name: mountpoint-dir
+        hostPath:
+          path: /var/lib/kubelet/pods
+          type: Directory
