@@ -38,6 +38,19 @@ spec:
         - name: mountpoint-dir
           mountPath: /var/lib/kubelet/pods
           mountPropagation: Bidirectional
+        ports:
+        - containerPort: 9808
+          name: healthz
+          protocol: TCP
+        # The probe. /healthz endpoint served via the liveness-probe sidecar
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: healthz
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          periodSeconds: 2
       - name: csi-driver-registrar
         image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
         args:
@@ -48,6 +61,14 @@ spec:
             mountPath: /csi
           - name: registration-dir
             mountPath: /registration
+      - name: liveness-probe
+        imagePullPolicy: Always
+        image: quay.io/k8scsi/livenessprobe:v1.1.0
+        args:
+        - --csi-address=/csi/csi.sock
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
       volumes:
       - name: registration-dir
         hostPath:
