@@ -36,7 +36,7 @@ To run the unit tests (using Docker) on any OS:
 
 1. Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running
 
-2. From the root of repository run `./hack/local_test.sh`
+2. From the root of repository run `make test`
 
 If you have made any code changes, you might also want to regenerate the [mocks](#mocks)
 
@@ -44,7 +44,7 @@ If you have made any code changes, you might also want to regenerate the [mocks]
 
 It is only possible to build for Linux targets.
 
-Run `GOOS=linux GOARCH=amd64 go build -o outputs/csi-s3`
+Run `make build`, this will produce `csi-s3` binary in `outputs` directory
 
 ### Mocks
 
