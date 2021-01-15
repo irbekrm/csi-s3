@@ -36,7 +36,7 @@ To run the unit tests (using Docker) on any OS:
 
 1. Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running
 
-2. From the root of repository run `./scripts/local_test.sh`
+2. From the root of repository run `./hack/local_test.sh`
 
 If you have made any code changes, you might also want to regenerate the [mocks](#mocks)
 
