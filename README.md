@@ -4,7 +4,7 @@
 
 CSI Driver for S3 via FUSE
 
-:warning: This project is currently in pre-alpha state and is not yet usable. See [below](#deploying-on-kubernetes) for how to try it out :warning:
+:warning: This project is currently in pre-alpha state. It was built to with a goal to learn more about CSI Drivers and is not meant to be used in production. See [below](#deploying-on-kubernetes) for how to try it out :warning:
 
 ## Description
 
