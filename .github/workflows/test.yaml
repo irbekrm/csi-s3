@@ -11,6 +11,7 @@ on:
 
 jobs:
   unit_test:
+    container: golang:1.16-buster
     name: unit tests
     runs-on: ubuntu-20.04
     steps:
