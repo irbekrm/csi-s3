@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockMounter is a mock of Mounter interface
+// MockMounter is a mock of Mounter interface.
 type MockMounter struct {
 	ctrl     *gomock.Controller
 	recorder *MockMounterMockRecorder
 }
 
-// MockMounterMockRecorder is the mock recorder for MockMounter
+// MockMounterMockRecorder is the mock recorder for MockMounter.
 type MockMounterMockRecorder struct {
 	mock *MockMounter
 }
 
-// NewMockMounter creates a new mock instance
+// NewMockMounter creates a new mock instance.
 func NewMockMounter(ctrl *gomock.Controller) *MockMounter {
 	mock := &MockMounter{ctrl: ctrl}
 	mock.recorder = &MockMounterMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockMounter) EXPECT() *MockMounterMockRecorder {
 	return m.recorder
 }
 
-// IsReady mocks base method
+// IsReady mocks base method.
 func (m *MockMounter) IsReady() (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsReady")
@@ -41,13 +42,13 @@ func (m *MockMounter) IsReady() (bool, error) {
 	return ret0, ret1
 }
 
-// IsReady indicates an expected call of IsReady
+// IsReady indicates an expected call of IsReady.
 func (mr *MockMounterMockRecorder) IsReady() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReady", reflect.TypeOf((*MockMounter)(nil).IsReady))
 }
 
-// Mount mocks base method
+// Mount mocks base method.
 func (m *MockMounter) Mount(arg0, arg1, arg2, arg3 string, arg4 bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Mount", arg0, arg1, arg2, arg3, arg4)
@@ -55,13 +56,13 @@ func (m *MockMounter) Mount(arg0, arg1, arg2, arg3 string, arg4 bool) error {
 	return ret0
 }
 
-// Mount indicates an expected call of Mount
+// Mount indicates an expected call of Mount.
 func (mr *MockMounterMockRecorder) Mount(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mount", reflect.TypeOf((*MockMounter)(nil).Mount), arg0, arg1, arg2, arg3, arg4)
 }
 
-// Type mocks base method
+// Type mocks base method.
 func (m *MockMounter) Type() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Type")
@@ -69,7 +70,7 @@ func (m *MockMounter) Type() string {
 	return ret0
 }
 
-// Type indicates an expected call of Type
+// Type indicates an expected call of Type.
 func (mr *MockMounterMockRecorder) Type() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockMounter)(nil).Type))
