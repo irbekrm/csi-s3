@@ -11,5 +11,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     steps:
-      - name: Unit test
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: unit test
         run: make test
