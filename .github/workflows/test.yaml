@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "README.md"
+
 jobs:
   unit_test:
     name: unit tests
