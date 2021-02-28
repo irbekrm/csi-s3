@@ -8,7 +8,7 @@ else
 $(error Unsupported OS: $(UNAME_S))
 endif
 
-.PHONY: all build test clean update fmt generate vet
+.PHONY: all build test clean update fmt generate vet tidy
 
 all: update test build
 
@@ -18,13 +18,16 @@ build:
 test: vet
 	./hack/test_$(OS).sh
 
-update: fmt generate
+update: tidy fmt generate
 
 fmt:
 	go fmt ./...
 
 vet:
 	go vet ./...
+
+tidy:
+	go mod tidy
 
 generate:
 	GOOS=linux GOARCH=amd64 go generate ./...
