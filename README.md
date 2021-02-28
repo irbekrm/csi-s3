@@ -37,7 +37,7 @@ This project can only be built for Linux targets because of a dependency on a Li
 
 To run the unit tests (using Docker) on any OS:
 
-1. Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running
+1. (OSX only) Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running
 
 2. From the root of repository run `make test`
 
@@ -55,9 +55,9 @@ This project uses generated [gomock](https://github.com/golang/mock) mocks for u
 
 To regenerate the mocks:
 
-1. Install mockgen `go get github.com/golang/mock/mockgen@v1.4.4`
+1. [Install mockgen](https://github.com/golang/mock)
 
-2. Run `GOOS=linux GOARCH=amd64 go generate ./...`
+2. Run `make generate`
 
 ### Deploying on Kubernetes
 
