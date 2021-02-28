@@ -1,0 +1,15 @@
+name: test
+defaults:
+  run:
+    shell: bash
+on: 
+  push:
+    branches:
+      - main
+jobs:
+  unit_test:
+    name: unit tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Unit test
+        run: make test
