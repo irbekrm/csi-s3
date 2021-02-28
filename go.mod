@@ -1,6 +1,6 @@
 module github.com/irbekrm/csi-s3
 
-go 1.15
+go 1.16
 
 require (
 	github.com/container-storage-interface/spec v1.3.0
