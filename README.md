@@ -1,4 +1,7 @@
 # csi-s3
+
+[![test](https://github.com/irbekrm/csi-s3/actions/workflows/test.yaml/badge.svg?branch=main&event=push)](https://github.com/irbekrm/csi-s3/actions/workflows/test.yaml)
+
 CSI Driver for S3 via FUSE
 
 :warning: This project is currently in pre-alpha state and is not yet usable. See [below](#deploying-on-kubernetes) for how to try it out :warning:
